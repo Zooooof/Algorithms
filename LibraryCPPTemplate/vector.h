@@ -1,105 +1,96 @@
-#ifndef VECTOR_H
-#define VECTOR_H
+#ifndef VECTOR_TEMPLATE_H
+#define VECTOR_TEMPLATE_H
 
-#include <stdexcept>
 #include <cstddef>
-#include <initializer_list>
+#include <stdexcept>
 #include <algorithm>
 
-template <typename T>
+template <typename Data>
 class Vector {
-private:
-    T* data;
-    size_t current_size;
-    size_t capacity;
-
-    void resize_data(size_t new_capacity) {
-        T* new_data = new T[new_capacity];
-        std::copy(data, data + current_size, new_data);
-        delete[] data;
-        data = new_data;
-        capacity = new_capacity;
-    }
-
 public:
-    Vector(size_t initial_capacity = 10)
-        : data(new T[initial_capacity]), current_size(0), capacity(initial_capacity) {}
-
-    Vector(std::initializer_list<T> init_list)
-        : data(new T[init_list.size()]), current_size(init_list.size()), capacity(init_list.size()) {
-        std::copy(init_list.begin(), init_list.end(), data);
+    Vector() : data(nullptr), _size(0), _capacity(0) {}
+    
+    explicit Vector(size_t size) : _size(size), _capacity(size) {
+        data = new Data[_capacity];
+        for (size_t i = 0; i < _size; ++i) {
+            data[i] = Data();
+        }
     }
 
-    Vector(const Vector& other)
-        : data(new T[other.capacity]), current_size(other.current_size), capacity(other.capacity) {
-        std::copy(other.data, other.data + other.current_size, data);
+    Vector(const Vector& other) : _size(other._size), _capacity(other._size) {
+        data = new Data[_capacity];
+        for (size_t i = 0; i < _size; ++i) {
+            data[i] = other.data[i];
+        }
     }
 
     Vector& operator=(const Vector& other) {
-        if (this == &other) return *this;
-        delete[] data;
-        data = new T[other.capacity];
-        current_size = other.current_size;
-        capacity = other.capacity;
-        std::copy(other.data, other.data + other.current_size, data);
+        if (this != &other) {
+            delete[] data;
+            _size = other._size;
+            _capacity = other._size;
+            data = new Data[_capacity];
+            for (size_t i = 0; i < _size; ++i) {
+                data[i] = other.data[i];
+            }
+        }
         return *this;
     }
 
-    ~Vector() { delete[] data; }
-
-    void push_back(const T& value) {
-        if (current_size == capacity)
-            resize_data(capacity * 2);
-        data[current_size++] = value;
+    ~Vector() {
+        delete[] data;
     }
 
-    void erase(size_t index) {
-        if (index >= current_size) throw std::out_of_range("Index out of range");
-        for (size_t i = index; i < current_size - 1; ++i)
-            data[i] = data[i + 1];
-        --current_size;
-    }
-
-    void set(size_t index, const T& value) {
-        if (index >= current_size) throw std::out_of_range("Index out of range");
-        data[index] = value;
-    }
-
-    T get(size_t index) const {
-        if (index >= current_size) throw std::out_of_range("Index out of range");
+    Data& operator[](size_t index) {
+        if (index >= _size) throw std::out_of_range("Index out of range");
         return data[index];
     }
 
+    const Data& operator[](size_t index) const {
+        if (index >= _size) throw std::out_of_range("Index out of range");
+        return data[index];
+    }
+
+    size_t size() const { return _size; }
+
     void resize(size_t new_size) {
-        if (new_size > capacity) {
+        if (new_size > _capacity) {
             reserve(new_size * 2);
         }
-        current_size = new_size;
+        _size = new_size;
     }
 
     void reserve(size_t new_capacity) {
-        if (new_capacity > capacity) {
-            resize_data(new_capacity);
+        if (new_capacity > _capacity) {
+            Data* new_data = new Data[new_capacity];
+            for (size_t i = 0; i < _size; ++i) {
+                new_data[i] = data[i];
+            }
+            delete[] data;
+            data = new_data;
+            _capacity = new_capacity;
         }
     }
 
-    T& operator[](size_t index) {
-        if (index >= current_size) throw std::out_of_range("Index out of range");
-        return data[index];
+    void push_back(const Data& value) {
+        if (_size == _capacity) {
+            reserve(_capacity == 0 ? 1 : _capacity * 2);
+        }
+        data[_size++] = value;
     }
 
-    const T& operator[](size_t index) const {
-        if (index >= current_size) throw std::out_of_range("Index out of range");
-        return data[index];
+    void erase(size_t index) {
+        if (index >= _size) throw std::out_of_range("Index out of range");
+        for (size_t i = index; i < _size - 1; ++i) {
+            data[i] = data[i + 1];
+        }
+        --_size;
     }
 
-    size_t size() const { return current_size; }
-
-    T* begin() { return data; }
-    T* end() { return data + current_size; }
-
-    const T* begin() const { return data; }
-    const T* end() const { return data + current_size; }
+private:
+    Data* data;
+    size_t _size;
+    size_t _capacity;
 };
 
-#endif
+#endif // VECTOR_TEMPLATE_H
